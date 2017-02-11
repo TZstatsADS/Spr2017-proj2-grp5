@@ -12,7 +12,7 @@ library(shiny)
 # Define UI for application that draws a histogram
 shinyUI(
 fluidPage(
-  titlePanel("Old Faithful Geyser Data"),
+  titlePanel("What problem you might face?"),
   
   sidebarLayout(
       selectInput("InputID",label="Cuisine Type", choices=c("japanese"))

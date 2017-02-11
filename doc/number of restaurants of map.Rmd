@@ -1,0 +1,118 @@
+---
+title: "visualize number of restaurants in MYC map"
+output: html_notebook
+---
+
+```{r load_libs, message=F}
+if (!require("DT")) install.packages('DT')
+if (!require("dtplyr")) install.packages('dtplyr')
+if(!require("lubridate")) install.packages('lubridate')
+
+library(dtplyr)
+library(dplyr)
+library(DT)
+library(lubridate)
+```
+
+```{r install_shiny, eval=F}
+#install.packages("shiny")
+library(shiny)
+```
+
+```{r load_data}
+rstrt=read.csv(file="../data/rstrt2016.csv")
+#datatable(sample_n(rstrt, 50))
+head(rstrt)
+```
+
+
+```{r zipcode_proc}
+rstrtzip=
+  rstrt%>%
+  filter(ZIPCODE>0)%>%
+  mutate(region=as.character(ZIPCODE))
+```
+
+```{r num_sales}
+count.df=rstrtzip%>%
+  group_by(region)%>%
+  dplyr::summarise(
+  value=n()
+  )
+save(count.df, file="../output/count.RData")
+```
+
+```{r install_pkgs, eval=F}
+if (!require("choroplethr")) install.packages("choroplethr")
+if (!require("devtools")) install.packages("devtools")
+
+library(devtools)
+
+if (!require("choroplethrZip")) 
+  devtools::install_github('arilamstein/choroplethrZip@v1.5.0')
+
+if (!require("ggplot2")) devtools::install_github("hadley/ggplot2")
+if (!require("ggmap")) devtools::install_github("dkahle/ggmap")
+```
+
+
+```{r code_plot_housing_sales, message=F, eval=F}
+library(choroplethrZip)
+# zip_choropleth(count.df,
+#     title       = "restaurants in NYC",
+#     legend      = "Number of restaurants",
+#     county_zoom = 36061)
+
+nyc_fips = c(36005, 36047, 36061, 36081, 36085)
+zip_choropleth(count.df,
+               county_zoom = nyc_fips,
+               title       = "NYC restaurants",
+               legend      = "number of restaurants")
+
+
+
+
+```
+```{r}
+rstrtvis <- function(type)
+{
+  rstrtvis <- rstrt[rstrt$CUISINE.DESCRIPTION==type,]
+  
+  rstrtzipvis=
+  rstrtvis%>%
+  filter(ZIPCODE>0)%>%
+  mutate(region=as.character(ZIPCODE))
+  
+  count.dfvis=rstrtzipvis%>%
+  group_by(region)%>%
+  dplyr::summarise(
+  value=n()
+  )
+
+  
+  
+if (!require("choroplethr")) install.packages("choroplethr")
+if (!require("devtools")) install.packages("devtools")
+
+library(devtools)
+
+if (!require("choroplethrZip")) 
+  devtools::install_github('arilamstein/choroplethrZip@v1.5.0')
+
+if (!require("ggplot2")) devtools::install_github("hadley/ggplot2")
+if (!require("ggmap")) devtools::install_github("dkahle/ggmap")  
+  
+
+nyc_fips = c(36005, 36047, 36061, 36081, 36085)
+zip_choropleth(count.dfvis,
+               county_zoom = nyc_fips,
+               title       = "NYC restaurants",
+               legend      = "number of restaurants")
+}
+
+
+rstrtvis("Chinese")
+rstrtvis("Italian")
+
+```
+

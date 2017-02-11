@@ -7,20 +7,18 @@
 #    http://shiny.rstudio.com/
 #
 
-library(shiny)
-
 # Define server logic required to draw a histogram
+library(shiny)
 shinyServer(function(input, output) {
-   
-  output$distPlot <- renderPlot({
     
-    # generate bins based on input$bins from ui.R
-    x    <- faithful[, 2] 
-    bins <- seq(min(x), max(x), length.out = input$bins + 1)
+    output$barPlot <- renderPlot({
+        
+        selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
+        ggplot(data=selected, aes(x=vio_code2)) +geom_bar(stat="count")
+        
+        
+        
+    })
     
-    # draw the histogram with the specified number of bins
-    hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    
-  })
-  
 })
+

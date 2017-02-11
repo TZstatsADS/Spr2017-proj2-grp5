@@ -6,19 +6,18 @@
 # 
 #    http://shiny.rstudio.com/
 #
-
 library(shiny)
 
 # Define UI for application that draws a histogram
 shinyUI(
 fluidPage(
-  titlePanel("What problem you might face?"),
-  
-  sidebarLayout(
-      selectInput("InputID",label="Cuisine Type", choices=c("japanese"))
-    ),
-    
-  mainPanel(
-       plotOutput("hist") #hist function in server
-    )
+titlePanel("What problem you might face?"),
+
+sidebarLayout(
+selectInput("type",label="Cuisine Type", choices=orig_1617$CUISINE.DESCRIPTION)
+),
+
+mainPanel(
+plotOutput("barPlot") #hist function in server
+)
 ))

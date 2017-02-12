@@ -1,0 +1,52 @@
+---
+title: "Datacleaning"
+author: "Yingxin Zhang (yz3032)"
+date: "2/10/2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+rstrt <- read.csv("/Users/yingxinzhang/Desktop/GR5243 Applied Data Science/PJ2/testdata.csv",as.is = T,header = T)
+head(rstrt)
+```
+```{r set GRADE}
+grade <- function(g)
+{
+  if(g<"A"|g>"C")
+  {return(NA)}
+  else
+  {return(g)}
+}
+
+rstrt$GRADE <- sapply(rstrt$GRADE,grade)
+```
+
+```{r}
+VC <- function(v,pattern)
+{
+  if(nchar(v)<=1){return(NA)}
+  else{
+  return(regmatches(v,gregexpr(pattern,v)))
+  }
+}
+
+
+rstrt$VC1 <- unlist(sapply(rstrt$VIOLATION.CODE,VC,pattern = "[0-9]{2}"))
+
+rstrt$VC2 <- unlist(sapply(rstrt$VIOLATION.CODE,VC,pattern = "[A-Z]"))
+
+rstrt$INSPECTION.YEAR <- unlist(sapply(rstrt$INSPECTION.DATE,VC,pattern = "[0-9]{4}"))
+
+head(rstrt)
+
+```
+```{r}
+
+```
+

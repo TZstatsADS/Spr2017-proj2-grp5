@@ -1,0 +1,31 @@
+---
+title: "Project_2_grp5"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(dplyr)
+setwd("/Users/ZHANGJIAHAO/Desktop/R-studio")
+orig_data <- read.csv("DOHMH_New_York_City_Restaurant_Inspection_Results.csv",na.strings = c(""," "))
+#seperate year from the date
+orig_data$year <-substr(as.character(orig_data$INSPECTION.DATE), 7,10)
+#create season
+orig_data$month <-substr(as.character(orig_data$INSPECTION.DATE), 1,2)
+orig_data$season <- ifelse(orig_data$month%in%c("01","02","03"),1,ifelse(orig_data$month%in%c("04","05","06"),2,ifelse(orig_data$month%in%c("07","08","09"),3,ifelse(orig_data$month%in%c("10","11","12"),4,NA))))
+#seperate code into two
+orig_data$vio_code1 <-substr(as.character(orig_data$VIOLATION.CODE),1,2)
+orig_data$vio_code2 <-substr(as.character(orig_data$VIOLATION.CODE),3,3)
+#select data from 2016
+orig_1617 <-orig_data[((orig_data$year=="2016")),]
+#adding descriptions for each category of violation
+#must copy original vio_code1 before recode
+orig_1617$recode <-orig_1617$vio_code1
+orig_1617$recode <-recode_factor(orig_1617$recode,"02"="Food Temperature","03"="Food Source","04"="Food Protection","05"="Facility Design","06"="Personal Hygiene","07"="Other Criticals","08"="Vermin/Garbage","09"="Food Source II","10"="Facility Maintenance","15"="Tobacco Related","16"="Artificial Transfat","18"="Admin and Documentation","20"="Signage","22"="Miscellaneous")
+
+
+
+```

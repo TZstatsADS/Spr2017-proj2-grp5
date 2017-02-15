@@ -34,9 +34,14 @@ shinyServer(function(input, output) {
       df2<- as.data.frame(merge(df0,df_1,by.x = "VIOLATION.DESCRIPTION",by.y = "VIOLATION.DESCRIPTION",all.y = TRUE))
       df2<-reshape(df2, idvar = c("VIOLATION.DESCRIPTION","vio_code2"), timevar = "season", direction = "wide")
       df2[is.na(df2)] <- 0
-      df2$Freq <-rowSums(df2[,3:6])
+      if(ncol(df2)!=6){
+        new.var<-c("one.1","one.2","one.3","one.4")[!(c("one.1","one.2","one.3","one.4")%in%colnames(df2)[-c(1,2)])]
+        df2$new <- rep(0,nrow(df2))
+        colnames(df2)[ncol(df2)]<-new.var}
+      df2$Freq <-rowSums(df2[,-c(1:2)])
       plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~one.1,type = 'bar', name="spring")%>%
         add_trace(y = ~one.2, name = 'summer')%>%
+        
         add_trace(y = ~one.3, name = 'fall')%>%
         add_trace(y = ~one.4, name = 'winter')%>%layout(yaxis = list(title = 'Count'), barmode = 'stack')
       

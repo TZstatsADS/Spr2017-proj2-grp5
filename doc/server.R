@@ -17,13 +17,14 @@ shinyServer(function(input, output) {
     output$barPlot <- renderPlot({
       selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
       df <- as.data.frame(table(selected$recode))
-      ggplot(data=df,aes(reorder(Var1,Freq),Freq))+geom_bar(stat="identity")+coord_flip()
+      ggplot(data=df,aes(reorder(Var1,Freq),Freq,fill=Freq))+geom_bar(stat="identity")+coord_flip()
       })
     
     output$barPlot1 <- renderPlotly({
       selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
       selected<-selected[!is.na(selected$recode),]
       selected_vio <- selected[(selected$recode==input$vio_type),]
+      if(nrow(selected_vio)==0){plot_ly()}else{
       selected_vio$one <-rep(1,nrow(selected_vio))
       group<-c("VIOLATION.DESCRIPTION","season")
       dat<-c("one")
@@ -36,14 +37,17 @@ shinyServer(function(input, output) {
       df2[is.na(df2)] <- 0
       if(ncol(df2)!=6){
         new.var<-c("one.1","one.2","one.3","one.4")[!(c("one.1","one.2","one.3","one.4")%in%colnames(df2)[-c(1,2)])]
-        df2$new <- rep(0,nrow(df2))
-        colnames(df2)[ncol(df2)]<-new.var}
+        for (i in 1:length(new.var)){
+          df2<-data.frame(df2,rep(0,nrow(df2)))
+        }
+        
+        colnames(df2)[(ncol(df2)+1-length(new.var)):ncol(df2)]<-new.var}
       df2$Freq <-rowSums(df2[,-c(1:2)])
       plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~one.1,type = 'bar', name="spring")%>%
-        add_trace(y = ~one.2, name = 'summer')%>%
+        add_trace(y = ~one.2,name = 'summer')%>%
         
         add_trace(y = ~one.3, name = 'fall')%>%
-        add_trace(y = ~one.4, name = 'winter')%>%layout(yaxis = list(title = 'Count'), barmode = 'stack')
+        add_trace(y = ~one.4, name = 'winter')%>%layout(yaxis = list(title = 'Count'), barmode = 'stack')}
       
     })
     

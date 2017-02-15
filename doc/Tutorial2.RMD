@@ -54,7 +54,7 @@ save(count.df, file="../output/count.RData")
 ```
 
 ## Visualize using `choroplethr`
-"A choropleth map (from Greek χώρο ("area/region") + πλήθος ("multitude")) is a thematic map in which areas are shaded or patterned in proportion to the measurement of the statistical variable being displayed on the map, such as population density or per-capita income."
+"A choropleth map (from Greek ???????? ("area/region") + ???????????? ("multitude")) is a thematic map in which areas are shaded or patterned in proportion to the measurement of the statistical variable being displayed on the map, such as population density or per-capita income."
 
 ## Install the package. 
 ```{r install_pkgs, eval=F}

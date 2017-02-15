@@ -24,19 +24,21 @@ shinyServer(function(input, output) {
       selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
       selected<-selected[!is.na(selected$recode),]
       selected_vio <- selected[(selected$recode==input$vio_type),]
+      selected_vio$one <-rep(1,nrow(selected_vio))
+      group<-c("VIOLATION.DESCRIPTION","season")
+      dat<-c("one")
+      df_1 <- ddply(selected_vio,group,function(x)colSums(x[dat]))
       df1<- as.data.frame(table(selected_vio$VIOLATION.DESCRIPTION))
       df1 <-df1[df1$Freq!=0,]
       df0<- unique(selected_vio[,c("VIOLATION.DESCRIPTION","vio_code2")])
-      df2<- as.data.frame(merge(df0,df1,by.x = "VIOLATION.DESCRIPTION",by.y = "Var1",all.y = TRUE))
-    
-      plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~Freq, type = 'bar',
-              marker = list(color = 'rgb(158,202,225)',
-                            line = list(color = 'rgb(8,148,47)',
-                                        width = 1)))%>% 
-       
-      layout(
-             xaxis = list(title = ""),
-             yaxis = list(title = ""))
+      df2<- as.data.frame(merge(df0,df_1,by.x = "VIOLATION.DESCRIPTION",by.y = "VIOLATION.DESCRIPTION",all.y = TRUE))
+      df2<-reshape(df2, idvar = c("VIOLATION.DESCRIPTION","vio_code2"), timevar = "season", direction = "wide")
+      df2[is.na(df2)] <- 0
+      df2$Freq <-rowSums(df2[,3:6])
+      plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~one.1,type = 'bar', name="spring")%>%
+        add_trace(y = ~one.2, name = 'summer')%>%
+        add_trace(y = ~one.3, name = 'fall')%>%
+        add_trace(y = ~one.4, name = 'winter')%>%layout(yaxis = list(title = 'Count'), barmode = 'stack')
       
     })
     

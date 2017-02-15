@@ -1,0 +1,50 @@
+---
+title: "Project_2_grp5"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(dplyr)
+library(data.table)
+setwd("/Users/apple/Documents/R/Spr2017-proj2/data")
+orig_data <- read.csv("DOHMH_New_York_City_Restaurant_Inspection_Results.csv",na.strings = c(""," "))
+#seperate year from the date
+orig_data$year <-substr(as.character(orig_data$INSPECTION.DATE), 7,10)
+#create season
+orig_data$month <-substr(as.character(orig_data$INSPECTION.DATE), 1,2)
+orig_data$season <- ifelse(orig_data$month%in%c("01","02","03"),1,ifelse(orig_data$month%in%c("04","05","06"),2,ifelse(orig_data$month%in%c("07","08","09"),3,ifelse(orig_data$month%in%c("10","11","12"),4,NA))))
+#seperate code into two
+orig_data$vio_code1 <-substr(as.character(orig_data$VIOLATION.CODE),1,2)
+orig_data$vio_code2 <-substr(as.character(orig_data$VIOLATION.CODE),3,3)
+#select data from 2016
+orig_1617 <-orig_data[((orig_data$year=="2016")),]
+#adding descriptions for each category of violation
+#must copy original vio_code1 before recode
+orig_1617$recode <-orig_1617$vio_code1
+orig_1617$recode <-recode_factor(orig_1617$recode,"02"="Food Temperature","03"="Food Source","04"="Food Protection","05"="Facility Design","06"="Personal Hygiene","07"="Other Criticals","08"="Vermin/Garbage","09"="Food Source II","10"="Facility Maintenance","15"="Tobacco Related","16"="Artificial Transfat","18"="Admin and Documentation","20"="Signage","22"="Miscellaneous")
+
+
+tb<-as.data.frame(table(orig_1617$CUISINE.DESCRIPTION))
+tb<-tb[order(-tb$Freq),]
+tb <- tb[tb$Freq>=378,]
+ 
+tb_vio<-as.data.frame(table(orig_1617$recode))
+tb_vio<-tb_vio[order(-tb_vio$Freq),]
+
+
+selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION=="Chinese"),]
+      selected_vio <- selected[(selected$recode=="Signage"),]
+      df1<- as.data.frame(table(selected_vio$VIOLATION.DESCRIPTION))
+      df1 <-df1[df1$Freq!=0,]
+      df0<- unique(selected_vio[,c("VIOLATION.DESCRIPTION","vio_code2")])
+      df2<- as.data.frame(merge(df0,df1,by.x = "VIOLATION.DESCRIPTION",by.y = "Var1",all.y = TRUE))
+    
+      plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~Freq, type = 'bar',
+              marker = list(color = 'rgb(158,202,225)',
+                            line = list(color = 'rgb(8,48,107)',
+                                        width = 1)))
+```

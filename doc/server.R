@@ -8,8 +8,11 @@
 library(shiny)
 library(ggplot2)
 library(plotly)
-
-
+library(plyr)
+library(leaflet)
+library(RColorBrewer)
+library(scales)
+library(lattice)
 shinyServer(function(input, output) {
   
   observe({
@@ -17,7 +20,7 @@ shinyServer(function(input, output) {
     output$barPlot <- renderPlot({
       selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
       df <- as.data.frame(table(selected$recode))
-      ggplot(data=df,aes(reorder(Var1,Freq),Freq,fill=Freq))+geom_bar(stat="identity")+coord_flip()
+      ggplot(data=df,aes(reorder(Var1,Freq),Freq,fill=Freq))+geom_bar(stat="identity",fill='#9CCC65')+coord_flip()
       })
     
     output$barPlot1 <- renderPlotly({
@@ -43,11 +46,11 @@ shinyServer(function(input, output) {
         
         colnames(df2)[(ncol(df2)+1-length(new.var)):ncol(df2)]<-new.var}
       df2$Freq <-rowSums(df2[,-c(1:2)])
-      plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~one.1,type = 'bar', name="spring")%>%
-        add_trace(y = ~one.2,name = 'summer')%>%
+      plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~one.1,type = 'bar', name="spring",marker = list(color = 'rgb(159,168,213)'))%>%
+        add_trace(y = ~one.2,name = 'summer',marker = list(color = 'rgb(153,204,204)'))%>%
         
-        add_trace(y = ~one.3, name = 'fall')%>%
-        add_trace(y = ~one.4, name = 'winter')%>%layout(yaxis = list(title = 'Count'), barmode = 'stack')}
+        add_trace(y = ~one.3, name = 'fall',marker = list(color = 'rgb(178,235,242)'))%>%
+        add_trace(y = ~one.4, name = 'winter',marker = list(color = 'rgb(165,214,167)'))%>%layout(yaxis = list(title = 'Count'), barmode = 'stack')}
       
     })
     
@@ -64,6 +67,15 @@ shinyServer(function(input, output) {
       df2
       })
     
+  })
+  observe({
+    output$map <- renderLeaflet({
+      leaflet() %>%
+        addTiles(
+          urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+          attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+        ) %>% addMarkers(-74.00301,40.72545,"popup")%>%
+        setView(lng = -74.00301, lat = 40.72545, zoom = 11)})
   })
   })
 

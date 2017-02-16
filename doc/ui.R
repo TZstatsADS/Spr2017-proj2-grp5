@@ -7,9 +7,10 @@
 library(shiny)
 library(ggplot2)
 library(plotly)
-
+library(plyr)
+library(leaflet)
 shinyUI(navbarPage("",
-                   tabPanel("Visualize Features",
+                   tabPanel("Violation Tracker",
                             fluidRow(                           
                               column(6,  selectInput(
                               "type",label="Cuisine Type", choices=tb$Var1)#orig_1617$CUISINE.DESCRIPTION
@@ -32,6 +33,39 @@ shinyUI(navbarPage("",
                             )
                                                   
                             
+                   ),tabPanel("Interactive map",
+                              div(class="outer",
+                                  
+                                  tags$head(
+                                    # Include our custom CSS
+                                    includeCSS("styles.css"),
+                                    includeScript("gomap.js")
+                                  ),
+                                  
+                                  leafletOutput("map", width="100%", height="100%"),
+                                  
+                                  # Shiny versions prior to 0.11 should use class="modal" instead.
+                                  absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
+                                                draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
+                                                width = 330, height = "auto",
+
+                                                h2("ZIP explorer"),
+
+                                                selectInput("cuisine", h3("Cuisine Type"),choices = tb$Var1),
+                                                textInput("zipcode", label = h3("Zipcode"), 
+                                                          value = "Enter zip here..."),
+                                                # selectInput("size", "Size", vars, selected = "adultpop"),
+                                                conditionalPanel("input.color == 'superzip' || input.size == 'superzip'",
+                                                                 # Only prompt for threshold when coloring or sizing by superzip
+                                                                 numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)
+                                                )
+                                                # 
+                                                # plotOutput("histCentile", height = 200),
+                                                # plotOutput("scatterCollegeIncome", height = 250)
+                                  )
+                                  
+                                  
+                              )
                    )
                    )
 )

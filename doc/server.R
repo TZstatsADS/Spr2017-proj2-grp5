@@ -69,12 +69,21 @@ shinyServer(function(input, output) {
     
   })
   observe({
+    # outputdata <- function(cuisine=tb$Var1,zipcode=unique(geo_1617$ZIPCODE)){
+    #   selectData1 <- geo_1617[(geo_1617$CUISINE.DESCRIPTION%in%input$cuisine)&(geo_1617$ZIPCODE%in%input$zipcode),]
+    #   selectData2<-selectData1[with(selectData1,order(address,INSPECTION.DATE)),]
+    #   selectData3 <- aggregate(selectData2,by=list(selectData2$DBA),FUN = last)
+    #   return(selectData3)
+    # }
+    # data <- outputdata(input$cuisine,input$zipcode)
     output$map <- renderLeaflet({
-      leaflet() %>%
+      data<-outputdata(input$cuisine,input$zipcode)
+      
+      leaflet(data = data) %>%
         addTiles(
           urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
           attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-        ) %>% addMarkers(-74.00301,40.72545,"popup")%>%
+        ) %>% addCircles(data$lon,data$lat,radius=50,popup=paste(data$DBA,br(),data$address),color = (data$GRADE1))%>%
         setView(lng = -74.00301, lat = 40.72545, zoom = 11)})
   })
   })

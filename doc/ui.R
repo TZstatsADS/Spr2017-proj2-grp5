@@ -9,7 +9,7 @@ library(ggplot2)
 library(plotly)
 library(plyr)
 library(leaflet)
-shinyUI(navbarPage("",
+shinyUI(navbarPage("Restaurant Violation",
                    tabPanel("Violation Tracker",
                             fluidRow(                           
                               column(6,  selectInput(
@@ -51,10 +51,10 @@ shinyUI(navbarPage("",
 
                                                 h2("ZIP explorer"),
 
-                                                selectInput("cuisine", h3("Cuisine Type"),choices = tb$Var1),
+                                                selectInput("cuisine", h3("Cuisine Type"),choices = tb$Var1,selected = "Chinese"),
                                                 textInput("zipcode", label = h3("Zipcode"), 
-                                                          value = "Enter zip here..."),
-                                                # selectInput("size", "Size", vars, selected = "adultpop"),
+                                                          value = 10025),
+                                                # selectInput("", "Size", vars, selected = "adultpop"),
                                                 conditionalPanel("input.color == 'superzip' || input.size == 'superzip'",
                                                                  # Only prompt for threshold when coloring or sizing by superzip
                                                                  numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)

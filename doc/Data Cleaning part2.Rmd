@@ -9,11 +9,11 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 
 ```{r}
 library(dplyr)
+library(ggmap)
 
-setwd("/Users/ZHANGJIAHAO/Desktop/R-studio")
 
 library(data.table)
-setwd("/Users/apple/Documents/R/Spr2017-proj2/data")
+
 
 orig_data <- read.csv("DOHMH_New_York_City_Restaurant_Inspection_Results.csv",na.strings = c(""," "))
 #seperate year from the date
@@ -38,26 +38,91 @@ tb <- tb[tb$Freq>=378,]
 tb_vio<-as.data.frame(table(orig_1617$recode))
 tb_vio<-tb_vio[order(-tb_vio$Freq),]
 
-## Original barplot without trend
- output$barPlot1 <- renderPlotly({
-      selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
-      selected<-selected[!is.na(selected$recode),]
-      selected_vio <- selected[(selected$recode==input$vio_type),]
-      df1<- as.data.frame(table(selected_vio$VIOLATION.DESCRIPTION))
-      df1 <-df1[df1$Freq!=0,]
-      df0<- unique(selected_vio[,c("VIOLATION.DESCRIPTION","vio_code2")])
-      df2<- as.data.frame(merge(df0,df1,by.x = "VIOLATION.DESCRIPTION",by.y = "Var1",all.y = TRUE))
-    
-      plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~Freq, type = 'bar',
-              marker = list(color = 'rgb(158,202,225)',
-                            line = list(color = 'rgb(8,148,47)',
-                                        width = 1)))%>% 
-       
-      layout(
-             xaxis = list(title = ""),
-             yaxis = list(title = ""))
-      
-    })
+#Selecting address
+orig_1617$address <- paste(orig_1617$BUILDING,orig_1617$STREET)
+add <- unique(orig_1617$address)
+# add_1<-add[2401:4900]
+# lonlat <-geocode(add[2401:4900])
+# lonlat$X <- c(1:2500)
+# add_latlon <-cbind(add_1,lonlat)
+# geo_1617 <- merge(orig_1617,add_latlon,by.x = "address",by.y="add_1",all.x = TRUE)
+# geo_2500 <- geo_1617[which(!is.na(geo_1617$lat)),]
+# selectData<-geo_2500[geo_2500$CUISINE.DESCRIPTION=="Indian",]
+# selectData<-selectData[with(selectData,order(address,INSPECTION.DATE)),]
+# selectData <- aggregate(selectData,by=list(selectData$DBA),FUN = last)
+# selectData<-selectData[with(selectData,order(SCORE)),]
+# 
+## read in latlon data
+add_85_160 <- add[4901:18500]
+lonlat_7000 <- read.csv("4901-7000.csv")
+lonlat_8500 <- read.csv("lonlat7001-8500.csv")
+lonlat_11000 <- read.csv("lonlat8501-11000.csv")
+lonlat_13500 <- read.csv("lonlat11001-13500.csv")
+lonlat_16000 <- read.csv("lonlat13501-16000.csv")
+lonlat_18500 <- read.csv("lonlat16001-18500.csv")
+lonlat_85_160 <- rbind(lonlat_7000,lonlat_8500,lonlat_11000,lonlat_13500,lonlat_16000,lonlat_18500)
+add_lonlat <- cbind(add_85_160,lonlat_85_160)[,-2]
+colnames(add_lonlat)[1] <- "address"
+geo_1617 <- merge(orig_1617,add_lonlat,by.x = "address",by.y="address",all.x = TRUE)
+geo_1617 <- geo_1617[which(!is.na(geo_1617$lat)),]
+geo_1617$GRADE1 <- ifelse(is.na(geo_1617$SCORE),"#99A3A4",ifelse(geo_1617$SCORE<=13,'#27AE60',ifelse(geo_1617$SCORE<=27,"#3498DB","#E74C3C")))
+zip <-unique(geo_1617$ZIPCODE)
+outputdata <- function(cuisine=tbVar1,zipcode=unique(geo_1617$ZIPCODE)){
+  selectData1 <- geo_1617[(geo_1617$CUISINE.DESCRIPTION%in%cuisine)&(geo_1617$ZIPCODE%in%zipcode),]
+  selectData2<-selectData1[with(selectData1,order(address,INSPECTION.DATE)),]
+  selectData3 <- aggregate(selectData2,by=list(selectData2$DBA),FUN = last)
+  return(selectData3)
+}
+outterdata<- function(cuisine=tbVar1,zipcode=unique(geo_1617$ZIPCODE)){
+  if (zipcode==""){outputdata(cuisine)}
+  else{outputdata(cuisine,zipcode)}
+}
+# test<-outterdata("Chinese",10025)
+# test1 <-geo_1617[geo_1617$DBA=="CAFE HONG KONG",]
+# # 
+# # 
+# # selectData1 <- geo_1617[(geo_1617$CUISINE.DESCRIPTION%in%c("Chinese"))&(geo_1617$ZIPCODE%in%c(10025)),]
+# #   selectData2<-selectData1[with(selectData1,order(address,INSPECTION.DATE)),]
+# #   selectData3 <- aggregate(selectData2,by=list(selectData2$DBA),FUN = last)
+# geocodeQueryCheck()
+# df2 = data.frame(color = topo.colors(100, alpha = NULL), stringsAsFactors = FALSE)
+# 
+# selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION=="Chinese"),]
+#       df <- as.data.frame(table(selected$recode))
+#       df$Prop <- df$Freq/sum(df$Freq)
+#       df_sum <- as.data.frame(table(orig_1617$recode))
+#       df_sum$Prop <- df_sum$Freq/sum(df_sum$Freq)
+#       
+library(rvest)
+library(stringr)
+library(tidyr)
+## scraping Yelp data
+#lops for getting html page
+link_source <-c()
+
+
+  t <-unique(page %>%html_nodes("#super-container .js-analytics-click") %>% html_attr('href'))
+  link_source<- c(link_source,t)
+
+#url
+url_query <- geo_1617[,c("DBA","ZIPCODE")]
+url_query$DBA <- gsub("& ","",url_query$DBA)
+url_query$DBA <- gsub(" ","\\+",url_query$DBA) 
+url_query <-unique(url_query)
+url_DBA <-gsub("\032","",url_query$DBA)
+
+page1 <- c(rep(NA,nrow(url_query)))
+#add NA to row 5405 of page1
+page2 <-c(rep(NA,8360))
+for (i in 5406:13765){
+  page=read_html(paste("https://www.yelp.com/search?find_desc=",url_query$DBA[i],"&find_loc=",url_query$ZIPCODE[i],sep = ""))
+  page2[i-5405]<-(page %>%html_nodes(".indexed-biz-name .js-analytics-click") %>% html_attr('href'))[1]
+  
+}
+
+page=read_html(paste("https://www.yelp.com/search?find_desc=",url_query$DBA,"&find_loc=",url_query$ZIPCODE,sep = ""))
+
+page %>%html_nodes(".indexed-biz-name .js-analytics-click") %>% html_attr('href')
 
 ```
 

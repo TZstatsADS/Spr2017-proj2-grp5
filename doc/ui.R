@@ -13,9 +13,9 @@ shinyUI(navbarPage("Restaurant Violation",
                    tabPanel("Violation Tracker",
                             fluidRow(                           
                               column(6,  selectInput(
-                              "type",label="Cuisine Type", choices=tb$Var1)#orig_1617$CUISINE.DESCRIPTION
+                              "type",label="See Top Violations in:", choices=tb$Var1)#orig_1617$CUISINE.DESCRIPTION
                               ),
-                              column(6, selectInput("vio_type",label="Violation Type", choices=tb_vio$Var1)#orig_1617$CUISINE.DESCRIPTION
+                              column(6, selectInput("vio_type",label="See More Detailed Violations in:", choices=tb_vio$Var1)#orig_1617$CUISINE.DESCRIPTION
   
                             )),
                             
@@ -51,9 +51,11 @@ shinyUI(navbarPage("Restaurant Violation",
 
                                                 h2("ZIP explorer"),
 
-                                                selectInput("cuisine", h3("Cuisine Type"),choices = tb$Var1,selected = "Chinese"),
+                                                selectInput("cuisine", h3("Cuisine"),choices = tb$Var1,selected = "Chinese"),
+                                                # selectInput("month", h3("Month"),choices = sort(unique(geo_1617$month)),selected = "02"),
                                                 textInput("zipcode", label = h3("Zipcode"), 
-                                                          value = 10025),
+                                                          value = ""),
+                                                actionButton("goButton","Enter"),
                                                 # selectInput("", "Size", vars, selected = "adultpop"),
                                                 conditionalPanel("input.color == 'superzip' || input.size == 'superzip'",
                                                                  # Only prompt for threshold when coloring or sizing by superzip

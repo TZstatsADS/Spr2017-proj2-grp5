@@ -20,7 +20,10 @@ shinyServer(function(input, output) {
     output$barPlot <- renderPlot({
       selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
       df <- as.data.frame(table(selected$recode))
-      ggplot(data=df,aes(reorder(Var1,Freq),Freq,fill=Freq))+geom_bar(stat="identity",fill='#9CCC65')+coord_flip()
+      df$Prop <- df$Freq/sum(df$Freq)
+      df_sum <- as.data.frame(table(orig_1617$recode))
+      df_sum$Prop <- df_sum$Freq/sum(df_sum$Freq)
+      ggplot(data=df,aes(reorder(Var1,Freq),Prop))+geom_bar(stat="identity",fill='#9CCC65')+geom_point(data = df_sum,aes(reorder(Var1,Freq),Prop))+ggtitle("")+theme(text = element_text(size = 15))+xlab("Top Violations")+ylab("Frequency")+coord_flip()
       })
     
     output$barPlot1 <- renderPlotly({
@@ -50,7 +53,7 @@ shinyServer(function(input, output) {
         add_trace(y = ~one.2,name = 'summer',marker = list(color = 'rgb(153,204,204)'))%>%
         
         add_trace(y = ~one.3, name = 'fall',marker = list(color = 'rgb(178,235,242)'))%>%
-        add_trace(y = ~one.4, name = 'winter',marker = list(color = 'rgb(165,214,167)'))%>%layout(yaxis = list(title = 'Count'), barmode = 'stack')}
+        add_trace(y = ~one.4, name = 'winter',marker = list(color = 'rgb(165,214,167)'))%>%layout(xaxis=list(title="Violation Sub-Codes"),yaxis = list(title = 'Count'), barmode = 'stack')}
       
     })
     
@@ -64,6 +67,7 @@ shinyServer(function(input, output) {
       df2<- as.data.frame(merge(df0,df1,by.x = "VIOLATION.DESCRIPTION",by.y = "Var1",all.y = TRUE))
       df2<-df2[order(-df2$Freq),-3]
       df2$VIOLATION.DESCRIPTION<-gsub("\032","",df2$VIOLATION.DESCRIPTION,fixed = TRUE)
+      colnames(df2)[1:2] <-c("Sub-Code Descriptions","Sub-Code")
       df2
       })
     
@@ -77,14 +81,17 @@ shinyServer(function(input, output) {
     # }
     # data <- outputdata(input$cuisine,input$zipcode)
     output$map <- renderLeaflet({
-      data<-outputdata(input$cuisine,input$zipcode)
+      input$goButton
+      zip <- isolate(input$zipcode)
+      data<-outterdata(input$cuisine,zip)
+      
       
       leaflet(data = data) %>%
         addTiles(
           urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
           attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-        ) %>% addCircles(data$lon,data$lat,radius=50,popup=paste(data$DBA,br(),data$address),color = (data$GRADE1))%>%
-        setView(lng = -74.00301, lat = 40.72545, zoom = 11)})
+        ) %>% addCircles(data$lon,data$lat,radius=25,popup=paste(data$DBA,br(),data$address),fillColor = (data$GRADE1),color = (data$GRADE1),stroke=FALSE,fillOpacity=0.8)%>%
+        setView(lng = median(data$lon), lat = median(data$lat), zoom = 15)}) 
   })
   })
 

@@ -13,6 +13,7 @@ library(leaflet)
 library(RColorBrewer)
 library(scales)
 library(lattice)
+library(DT)
 shinyServer(function(input, output) {
   
   observe({
@@ -80,18 +81,39 @@ shinyServer(function(input, output) {
     #   return(selectData3)
     # }
     # data <- outputdata(input$cuisine,input$zipcode)
+    # 
+    
     output$map <- renderLeaflet({
       input$goButton
       zip <- isolate(input$zipcode)
       data<-outterdata(input$cuisine,zip)
       
+   
       
+      
+    #define url
+    content1 <- paste(sep="","<b><a href=\'",geo_16$url,"\'>",data$DBA,"</a></b>")
+    content2 <-paste(sep="<br/>",content1,data$address1,data$PHONE)
+    
+    
       leaflet(data = data) %>%
         addTiles(
           urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
           attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-        ) %>% addCircles(data$lon,data$lat,radius=25,popup=paste(data$DBA,br(),data$address),fillColor = (data$GRADE1),color = (data$GRADE1),stroke=FALSE,fillOpacity=0.8)%>%
+        ) %>% addCircles(data$lon,data$lat,radius=25,fillColor = (data$GRADE1),color = (data$GRADE1),stroke=FALSE,fillOpacity=0.8)%>%
         setView(lng = median(data$lon), lat = median(data$lat), zoom = 15)}) 
+     
+    output$reco <- renderDataTable({
+      data<-outterdata(input$cuisine,input$zipcode)
+      datatable(data[1:3,c("DBA","SCORE")],options=list(searching = F))
+      
+      
+      
+    })
+    
+    
+    
+    
   })
   })
 

@@ -10,6 +10,15 @@ library(plotly)
 library(plyr)
 library(leaflet)
 shinyUI(navbarPage("Restaurant Violation",
+                   tabPanel("Main",
+                            sidebarLayout(
+                              div(class="side", sidebarPanel(width=0)),
+                              mainPanel(width=12,
+                                        img(src="featured2.png", style="width:100%")
+                              )
+                            )
+                            
+                   ),
                    tabPanel("Violation Tracker",
                             fluidRow(                           
                               column(6,  selectInput(
@@ -60,8 +69,8 @@ shinyUI(navbarPage("Restaurant Violation",
                                                 conditionalPanel("input.color == 'superzip' || input.size == 'superzip'",
                                                                  # Only prompt for threshold when coloring or sizing by superzip
                                                                  numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)
-                                                )
-                                                # 
+                                                ),
+                                                dataTableOutput("reco")
                                                 # plotOutput("histCentile", height = 200),
                                                 # plotOutput("scatterCollegeIncome", height = 250)
                                   )

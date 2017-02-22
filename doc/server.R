@@ -1,10 +1,3 @@
-# This is the server logic for a Shiny web application.
-# You can find out more about building applications with Shiny here:
-#
-# http://shiny.rstudio.com
-#
-
-
 library(shiny)
 library(ggplot2)
 library(plotly)
@@ -25,36 +18,36 @@ shinyServer(function(input, output) {
       df_sum <- as.data.frame(table(orig_1617$recode))
       df_sum$Prop <- df_sum$Freq/sum(df_sum$Freq)
       ggplot(data=df,aes(reorder(Var1,Freq),Prop))+geom_bar(stat="identity",fill='#9CCC65')+geom_point(data = df_sum,aes(reorder(Var1,Freq),Prop))+ggtitle("")+theme(text = element_text(size = 15))+xlab("Top Violations")+ylab("Frequency")+coord_flip()
-      })
+    })
     
     output$barPlot1 <- renderPlotly({
       selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
       selected<-selected[!is.na(selected$recode),]
       selected_vio <- selected[(selected$recode==input$vio_type),]
       if(nrow(selected_vio)==0){plot_ly()}else{
-      selected_vio$one <-rep(1,nrow(selected_vio))
-      group<-c("VIOLATION.DESCRIPTION","season")
-      dat<-c("one")
-      df_1 <- ddply(selected_vio,group,function(x)colSums(x[dat]))
-      df1<- as.data.frame(table(selected_vio$VIOLATION.DESCRIPTION))
-      df1 <-df1[df1$Freq!=0,]
-      df0<- unique(selected_vio[,c("VIOLATION.DESCRIPTION","vio_code2")])
-      df2<- as.data.frame(merge(df0,df_1,by.x = "VIOLATION.DESCRIPTION",by.y = "VIOLATION.DESCRIPTION",all.y = TRUE))
-      df2<-reshape(df2, idvar = c("VIOLATION.DESCRIPTION","vio_code2"), timevar = "season", direction = "wide")
-      df2[is.na(df2)] <- 0
-      if(ncol(df2)!=6){
-        new.var<-c("one.1","one.2","one.3","one.4")[!(c("one.1","one.2","one.3","one.4")%in%colnames(df2)[-c(1,2)])]
-        for (i in 1:length(new.var)){
-          df2<-data.frame(df2,rep(0,nrow(df2)))
-        }
-        
-        colnames(df2)[(ncol(df2)+1-length(new.var)):ncol(df2)]<-new.var}
-      df2$Freq <-rowSums(df2[,-c(1:2)])
-      plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~one.1,type = 'bar', name="spring",marker = list(color = 'rgb(159,168,213)'))%>%
-        add_trace(y = ~one.2,name = 'summer',marker = list(color = 'rgb(153,204,204)'))%>%
-        
-        add_trace(y = ~one.3, name = 'fall',marker = list(color = 'rgb(178,235,242)'))%>%
-        add_trace(y = ~one.4, name = 'winter',marker = list(color = 'rgb(165,214,167)'))%>%layout(xaxis=list(title="Violation Sub-Codes"),yaxis = list(title = 'Count'), barmode = 'stack')}
+        selected_vio$one <-rep(1,nrow(selected_vio))
+        group<-c("VIOLATION.DESCRIPTION","season")
+        dat<-c("one")
+        df_1 <- ddply(selected_vio,group,function(x)colSums(x[dat]))
+        df1<- as.data.frame(table(selected_vio$VIOLATION.DESCRIPTION))
+        df1 <-df1[df1$Freq!=0,]
+        df0<- unique(selected_vio[,c("VIOLATION.DESCRIPTION","vio_code2")])
+        df2<- as.data.frame(merge(df0,df_1,by.x = "VIOLATION.DESCRIPTION",by.y = "VIOLATION.DESCRIPTION",all.y = TRUE))
+        df2<-reshape(df2, idvar = c("VIOLATION.DESCRIPTION","vio_code2"), timevar = "season", direction = "wide")
+        df2[is.na(df2)] <- 0
+        if(ncol(df2)!=6){
+          new.var<-c("one.1","one.2","one.3","one.4")[!(c("one.1","one.2","one.3","one.4")%in%colnames(df2)[-c(1,2)])]
+          for (i in 1:length(new.var)){
+            df2<-data.frame(df2,rep(0,nrow(df2)))
+          }
+          
+          colnames(df2)[(ncol(df2)+1-length(new.var)):ncol(df2)]<-new.var}
+        df2$Freq <-rowSums(df2[,-c(1:2)])
+        plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~one.1,type = 'bar', name="spring",marker = list(color = 'rgb(159,168,213)'))%>%
+          add_trace(y = ~one.2,name = 'summer',marker = list(color = 'rgb(153,204,204)'))%>%
+          
+          add_trace(y = ~one.3, name = 'fall',marker = list(color = 'rgb(178,235,242)'))%>%
+          add_trace(y = ~one.4, name = 'winter',marker = list(color = 'rgb(165,214,167)'))%>%layout(xaxis=list(title="Violation Sub-Codes"),yaxis = list(title = 'Count'), barmode = 'stack')}
       
     })
     
@@ -70,7 +63,7 @@ shinyServer(function(input, output) {
       df2$VIOLATION.DESCRIPTION<-gsub("\032","",df2$VIOLATION.DESCRIPTION,fixed = TRUE)
       colnames(df2)[1:2] <-c("Sub-Code Descriptions","Sub-Code")
       df2
-      })
+    })
     
   })
   observe({
@@ -85,27 +78,41 @@ shinyServer(function(input, output) {
     
     output$map <- renderLeaflet({
       input$goButton
+      input$goButton1
+      cuisine <- isolate(input$cuisine)
+      name <-isolate(input$name)
       zip <- isolate(input$zipcode)
-      data<-outterdata(input$cuisine,zip)
+      if (name==""){
+        data<-outterdata(cuisine,zip)
+      } else{
+        data<- geo_16[geo_16$DBA==toupper(name),]
+      }
+      # data <- data[order(data$SCORE),]
+      # data$GRADE1[1:3] <-"#F1C40F"
+      # data<-outterdata(input$cuisine,zip)
+      # data1<- geo_16[geo_16$DBA==input$name,]
       
-   
       
       
-    #define url
-    content1 <- paste(sep="","<b><a href=\'",geo_16$url,"\'>",data$DBA,"</a></b>")
-    content2 <-paste(sep="<br/>",content1,data$address1,data$PHONE)
-    
-    
+      #define url
+      content1 <- paste(sep="","<b><a href=\'",data$url,"\'>",data$DBA,"</a></b>")
+      content2 <-paste(sep="<br/>",content1,data$CUISINE.DESCRIPTION,data$address1,data$PHONE)
+      
+      
       leaflet(data = data) %>%
         addTiles(
           urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
           attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-        ) %>% addCircles(data$lon,data$lat,radius=25,fillColor = (data$GRADE1),color = (data$GRADE1),stroke=FALSE,fillOpacity=0.8)%>%
+        ) %>% addCircles(data$lon,data$lat,radius=25,popup=content2,fillColor = (data$GRADE1),color = (data$GRADE1),stroke=FALSE,fillOpacity=0.8)%>%
+        addLegend("bottomright", colors= c("#99A3A4","#27AE60","#3498DB","#E74C3C","#F1C40F"), labels=c("not graded","A","B","C","Recommendation"), title="Grade Catagory")%>%
         setView(lng = median(data$lon), lat = median(data$lat), zoom = 15)}) 
-     
+    
     output$reco <- renderDataTable({
-      data<-outterdata(input$cuisine,input$zipcode)
-      datatable(data[1:3,c("DBA","SCORE")],options=list(searching = F))
+      input$goButton
+      zip <- isolate(input$zipcode)
+      data<-outterdata(input$cuisine,zip)
+      colnames(data)[1]<-"RESTAURANT NAME"
+      datatable(data[order(data$SCORE)[1:3],c("RESTAURANT NAME","SCORE")],options=list(searching = F,lengthChange=F,paging=F))
       
       
       
@@ -115,5 +122,4 @@ shinyServer(function(input, output) {
     
     
   })
-  })
-
+})

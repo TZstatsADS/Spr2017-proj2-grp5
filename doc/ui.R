@@ -52,7 +52,7 @@ shinyUI(navbarPage("CLEAN DINING WITH US   ",
                                                 draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
                                                 width = 330, height = "auto",
                                                 
-                                                h2("Find Your Dinner Place"),
+                                                h2("Find Your Dining Place"),
                                                 h4("Please enter a restaurant name or select cuisine type and zipcode  "),
                                                 textInput("name", label = h3("Restaurant"), 
                                                           value = "",placeholder = "If you know the name..."),
@@ -69,7 +69,7 @@ shinyUI(navbarPage("CLEAN DINING WITH US   ",
                                                                  numericInput("threshold", "SuperZIP threshold (top n percentile)", 5)
                                                 ),
                                                 br(),
-                                                h3("Our recommendation: "),
+                                                h3("Our recommendation "),
                                               
                                                 dataTableOutput("reco")
                                                 # plotOutput("histCentile", height = 200),

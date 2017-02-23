@@ -87,8 +87,10 @@ shinyServer(function(input, output) {
       } else{
         data<- geo_16[geo_16$DBA==toupper(name),]
       }
-      # data <- data[order(data$SCORE),]
-      # data$GRADE1[1:3] <-"#F1C40F"
+      data <- data[order(data$SCORE),]
+      if(nrow(data)<=3)
+      {data$GRADE1 <-"#F1C40F"}
+      else{data$GRADE1[1:3] <-"#F1C40F"}
       # data<-outterdata(input$cuisine,zip)
       # data1<- geo_16[geo_16$DBA==input$name,]
       
@@ -103,8 +105,8 @@ shinyServer(function(input, output) {
         addTiles(
           urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
           attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-        ) %>% addCircles(data$lon,data$lat,radius=25,popup=content2,fillColor = (data$GRADE1),color = (data$GRADE1),stroke=FALSE,fillOpacity=0.8)%>%
-        addLegend("bottomright", colors= c("#99A3A4","#27AE60","#3498DB","#E74C3C","#F1C40F"), labels=c("not graded","A","B","C","Recommendation"), title="Grade Catagory")%>%
+        ) %>% addCircles(data$lon,data$lat,radius=27,popup=content2,fillColor = (data$GRADE1),color = (data$GRADE1),stroke=FALSE,fillOpacity=0.8)%>%
+        addLegend("bottomright", colors= c("#99A3A4","#27AE60","#9B59B6","#E74C3C","#F1C40F"), labels=c("not graded","A","B","C","Recommendation"), title="Grade Catagory")%>%
         setView(lng = median(data$lon), lat = median(data$lat), zoom = 15)}) 
     
     output$reco <- renderDataTable({

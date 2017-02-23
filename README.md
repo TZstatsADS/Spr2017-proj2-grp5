@@ -15,7 +15,8 @@
 Term: Spring 2017
 
 + Team 5
-+ **Clean Dining: Visualizing NYC Restaurant Violations**: + Team members
++ **Clean Dining: Visualizing NYC Restaurant Violations**: 
++ Team members
 	+ Zhengyuan Guo (zg2256)
 	+ Jiahao Zhang (jz2773)
 	+ Yingxin Zhang (yz3032)

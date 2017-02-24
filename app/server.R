@@ -54,7 +54,11 @@ shinyServer(function(input, output) {
       df$Prop <- df$Freq/sum(df$Freq)
       df_sum <- as.data.frame(table(orig_1617$recode))
       df_sum$Prop <- df_sum$Freq/sum(df_sum$Freq)
-      ggplot(data=df,aes(reorder(Var1,Freq),Prop))+geom_bar(stat="identity",fill='#9CCC65')+geom_point(data = df_sum,aes(reorder(Var1,Freq),Prop))+ggtitle("")+theme(text = element_text(size = 15))+xlab("Top Violations")+ylab("Frequency")+coord_flip()
+      ggplot(data=df,aes(reorder(Var1,Freq),Prop))+geom_bar(stat="identity",fill='#9CCC65')+
+        geom_point(data = df_sum,aes(reorder(Var1,Freq),Prop))+
+        ggtitle("")+theme(text = element_text(size = 15))+xlab("Top Violations")+ylab("Frequency")+
+        labs(caption = "dots denotes the average percentage of each violtions across all types of restaurants")+
+        coord_flip()
     })
     
     output$barPlot1 <- renderPlotly({

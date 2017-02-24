@@ -106,12 +106,15 @@ shinyUI(navbarPage("CLEAN DINING WITH US   ",
                             br(),
                             br(),
                             fluidRow(
-                              column(7,
+                              column(6,
                                      plotOutput("barPlot")
-                              ),                              
-                              column(5,
+                              ),  
+                              
+                              column(6,
                                      plotlyOutput("barPlot1")      
                               ),
+                              
+                              
                               column(12,
                                      DT::dataTableOutput("table"))
                             )

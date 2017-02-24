@@ -1,121 +1,164 @@
 library(shiny)
-library(choroplethr)
-library(choroplethrZip)
+library(ggplot2)
+library(plotly)
+library(plyr)
+library(leaflet)
+library(RColorBrewer)
+library(scales)
+library(lattice)
+library(DT)
 library(dplyr)
+library(ggmap)
+library(data.table)
+library(rvest)
+library(stringr)
+library(tidyr)
 
-## Define Manhattan's neighborhood
-man.nbhd=c("all neighborhoods", "Central Harlem", 
-           "Chelsea and Clinton",
-           "East Harlem", 
-           "Gramercy Park and Murray Hill",
-           "Greenwich Village and Soho", 
-           "Lower Manhattan",
-           "Lower East Side", 
-           "Upper East Side", 
-           "Upper West Side",
-           "Inwood and Washington Heights")
-zip.nbhd=as.list(1:length(man.nbhd))
-zip.nbhd[[1]]=as.character(c(10026, 10027, 10030, 10037, 10039))
-zip.nbhd[[2]]=as.character(c(10001, 10011, 10018, 10019, 10020))
-zip.nbhd[[3]]=as.character(c(10036, 10029, 10035))
-zip.nbhd[[4]]=as.character(c(10010, 10016, 10017, 10022))
-zip.nbhd[[5]]=as.character(c(10012, 10013, 10014))
-zip.nbhd[[6]]=as.character(c(10004, 10005, 10006, 10007, 10038, 10280))
-zip.nbhd[[7]]=as.character(c(10002, 10003, 10009))
-zip.nbhd[[8]]=as.character(c(10021, 10028, 10044, 10065, 10075, 10128))
-zip.nbhd[[9]]=as.character(c(10023, 10024, 10025))
-zip.nbhd[[10]]=as.character(c(10031, 10032, 10033, 10034, 10040))
+tb <- readRDS("tb.Rdata")
+tb1 <- readRDS("tb1.Rdata")
+tb_vio <-readRDS("tb_vio.Rdata")
+orig_1617 <- readRDS("orig_1617.Rdata")
+geo_1617 <- readRDS("geo_1617.Rdata")
+geo_16 <- readRDS("geo_16.Rdata")
 
-## Load housing data
-load("../output/count.RData")
-load("../output/mh2009use.RData")
 
-# Define server logic required to draw a histogram
+
+
+#function for geomap
+zip_upmht <- c(10021,10028,10044,10065,10075,10128,10023:10025)
+outputdata <- function(cuisine,zipcode=zip_upmht){
+  if(is.null(cuisine)){cuisine=geo_16$CUISINE.DESCRIPTION}else{cuisine = cuisine}
+  selectData1 <- geo_16[(geo_16$CUISINE.DESCRIPTION%in%cuisine)&(geo_16$ZIPCODE%in%zipcode),]
+  selectData2<-selectData1[with(selectData1,order(address1,INSPECTION.DATE)),]
+  selectData3 <- aggregate(selectData2,by=list(selectData2$DBA),FUN = last)
+  return(selectData3)
+}
+
+outterdata<- function(cuisine="Chinese",zipcode=10025){
+  if (zipcode==""){outputdata(cuisine)}
+  else{outputdata(cuisine,zipcode)}
+}
+
+
+
+
+
+
 shinyServer(function(input, output) {
   
-  ## Neighborhood name
-  output$text = renderText({"Selected:"})
-  output$text1 = renderText({
-      paste("{ ", man.nbhd[as.numeric(input$nbhd)+1], " }")
+  observe({
+    
+    output$barPlot <- renderPlot({
+      selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
+      df <- as.data.frame(table(selected$recode))
+      df$Prop <- df$Freq/sum(df$Freq)
+      df_sum <- as.data.frame(table(orig_1617$recode))
+      df_sum$Prop <- df_sum$Freq/sum(df_sum$Freq)
+      ggplot(data=df,aes(reorder(Var1,Freq),Prop))+geom_bar(stat="identity",fill='#9CCC65')+geom_point(data = df_sum,aes(reorder(Var1,Freq),Prop))+ggtitle("")+theme(text = element_text(size = 15))+xlab("Top Violations")+ylab("Frequency")+coord_flip()
+    })
+    
+    output$barPlot1 <- renderPlotly({
+      selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
+      selected<-selected[!is.na(selected$recode),]
+      selected_vio <- selected[(selected$recode==input$vio_type),]
+      if(nrow(selected_vio)==0){plot_ly()}else{
+        selected_vio$one <-rep(1,nrow(selected_vio))
+        group<-c("VIOLATION.DESCRIPTION","season")
+        dat<-c("one")
+        df_1 <- ddply(selected_vio,group,function(x)colSums(x[dat]))
+        df1<- as.data.frame(table(selected_vio$VIOLATION.DESCRIPTION))
+        df1 <-df1[df1$Freq!=0,]
+        df0<- unique(selected_vio[,c("VIOLATION.DESCRIPTION","vio_code2")])
+        df2<- as.data.frame(merge(df0,df_1,by.x = "VIOLATION.DESCRIPTION",by.y = "VIOLATION.DESCRIPTION",all.y = TRUE))
+        df2<-reshape(df2, idvar = c("VIOLATION.DESCRIPTION","vio_code2"), timevar = "season", direction = "wide")
+        df2[is.na(df2)] <- 0
+        if(ncol(df2)!=6){
+          new.var<-c("one.1","one.2","one.3","one.4")[!(c("one.1","one.2","one.3","one.4")%in%colnames(df2)[-c(1,2)])]
+          for (i in 1:length(new.var)){
+            df2<-data.frame(df2,rep(0,nrow(df2)))
+          }
+          
+          colnames(df2)[(ncol(df2)+1-length(new.var)):ncol(df2)]<-new.var}
+        df2$Freq <-rowSums(df2[,-c(1:2)])
+        plot_ly(df2, x = ~reorder(df2$vio_code2,Freq), y = ~one.1,type = 'bar', name="spring",marker = list(color = 'rgb(159,168,213)'))%>%
+          add_trace(y = ~one.2,name = 'summer',marker = list(color = 'rgb(153,204,204)'))%>%
+          
+          add_trace(y = ~one.3, name = 'fall',marker = list(color = 'rgb(178,235,242)'))%>%
+          add_trace(y = ~one.4, name = 'winter',marker = list(color = 'rgb(165,214,167)'))%>%layout(xaxis=list(title="Violation Sub-Codes"),yaxis = list(title = 'Count'), barmode = 'stack')}
+      
+    })
+    
+    output$table <- renderDataTable({
+      selected <- orig_1617[(orig_1617$CUISINE.DESCRIPTION==input$type),]
+      selected_vio <- selected[(selected$recode==input$vio_type),]
+      df1<- as.data.frame(table(selected_vio$VIOLATION.DESCRIPTION))
+      df1 <-df1[df1$Freq!=0,]
+      df0<- unique(selected_vio[,c("VIOLATION.DESCRIPTION","vio_code2")])
+      
+      df2<- as.data.frame(merge(df0,df1,by.x = "VIOLATION.DESCRIPTION",by.y = "Var1",all.y = TRUE))
+      df2<-df2[order(-df2$Freq),-3]
+      df2$VIOLATION.DESCRIPTION<-gsub("\032","",df2$VIOLATION.DESCRIPTION,fixed = TRUE)
+      colnames(df2)[1:2] <-c("Sub-Code Descriptions","Sub-Code")
+      datatable(df2,options=list(searching = F,lengthChange=F,paging=F),rownames=F)
+    })
+    
   })
-  
-  ## Panel 1: summary plots of time trends, 
-  ##          unit price and full price of sales. 
-  
-  output$distPlot <- renderPlot({
+  observe({
+    # outputdata <- function(cuisine=tb$Var1,zipcode=unique(geo_1617$ZIPCODE)){
+    #   selectData1 <- geo_1617[(geo_1617$CUISINE.DESCRIPTION%in%input$cuisine)&(geo_1617$ZIPCODE%in%input$zipcode),]
+    #   selectData2<-selectData1[with(selectData1,order(address,INSPECTION.DATE)),]
+    #   selectData3 <- aggregate(selectData2,by=list(selectData2$DBA),FUN = last)
+    #   return(selectData3)
+    # }
+    # data <- outputdata(input$cuisine,input$zipcode)
+    # 
     
-    ## First filter data for selected neighborhood
-    mh2009.sel=mh2009.use
-    if(input$nbhd>0){
-      mh2009.sel=mh2009.use%>%
-                  filter(region %in% zip.nbhd[[as.numeric(input$nbhd)]])
-    }
+    output$map <- renderLeaflet({
+      input$goButton
+      input$goButton1
+      cuisine <- isolate(input$cuisine)
+      name <-isolate(input$name)
+      zip <- isolate(input$zipcode)
+      if (name==""){
+        data<-outterdata(cuisine,zip)
+      } else{
+        data<- geo_16[geo_16$DBA==toupper(name),]
+      }
+      data <- data[order(data$SCORE),]
+      if(nrow(data)<=3)
+      {data$GRADE1 <-"#F1C40F"}
+      else{data$GRADE1[1:3] <-"#F1C40F"}
+      # data<-outterdata(input$cuisine,zip)
+      # data1<- geo_16[geo_16$DBA==input$name,]
+      
+      
+      
+      #define url
+      content1 <- paste(sep="","<b><a href=\'",data$url,"\'>",data$DBA,"</a></b>")
+      content2 <-paste(sep="<br/>",content1,data$CUISINE.DESCRIPTION,data$address1,data$PHONE)
+      
+      
+      leaflet(data = data) %>%
+        addTiles(
+          urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+          attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+        ) %>% addCircles(data$lon,data$lat,radius=27,popup=content2,fillColor = (data$GRADE1),color = (data$GRADE1),stroke=FALSE,fillOpacity=0.8)%>%
+        addLegend("bottomright", colors= c("#27AE60","#3399FF","#E74C3C","#F1C40F","#99A3A4"), labels=c("A","B","C","Recommendation","not graded"), title="Grade Catagory")%>%
+        setView(lng = median(data$lon), lat = median(data$lat), zoom = 14)}) 
     
-    ## Monthly counts
-    month.v=as.vector(table(mh2009.sel$sale.month))
+    output$reco <- renderDataTable({
+      input$goButton
+      zip <- isolate(input$zipcode)
+      data<-outterdata(input$cuisine,zip)
+      colnames(data)[1]<-"RESTAURANT NAME"
+      datatable(data[order(data$SCORE)[1:3],c("RESTAURANT NAME","SCORE")],options=list(searching = F,lengthChange=F,paging=F),rownames=F)
+      
+      
+      
+    })
     
-    ## Price: unit (per sq. ft.) and full
-    type.price=data.frame(bldg.type=c("10", "13", "25", "28"))
-    type.price.sel=mh2009.sel%>%
-                group_by(bldg.type)%>%
-                summarise(
-                  price.mean=mean(sale.price, na.rm=T),
-                  price.median=median(sale.price, na.rm=T),
-                  unit.mean=mean(unit.price, na.rm=T),
-                  unit.median=median(unit.price, na.rm=T),
-                  sale.n=n()
-                )
-    type.price=left_join(type.price, type.price.sel, by="bldg.type")
     
-    ## Making the plots
-    layout(matrix(c(1,1,1,1,2,2,3,3,2,2,3,3), 3, 4, byrow=T))
-    par(cex.axis=1.3, cex.lab=1.5, 
-        font.axis=2, font.lab=2, col.axis="dark gray", bty="n")
     
-    ### Sales monthly counts
-    plot(1:12, month.v, xlab="Months", ylab="Total sales", 
-         type="b", pch=21, col="black", bg="red", 
-         cex=2, lwd=2, ylim=c(0, max(month.v,na.rm=T)*1.05))
     
-    ### Price per square foot
-    plot(c(0, max(type.price[,c(4,5)], na.rm=T)), 
-         c(0,5), 
-         xlab="Price per square foot", ylab="", 
-         bty="l", type="n")
-    text(rep(0, 4), 1:4+0.5, paste(c("coops", "condos", "luxury hotels", "comm. condos"), 
-                                  type.price$sale.n, sep=": "), adj=0, cex=1.5)
-    points(type.price$unit.mean, 1:nrow(type.price), pch=16, col=2, cex=2)
-    points(type.price$unit.median, 1:nrow(type.price),  pch=16, col=4, cex=2)
-    segments(type.price$unit.mean, 1:nrow(type.price), 
-              type.price$unit.median, 1:nrow(type.price),
-             lwd=2)    
-    
-    ### full price
-    plot(c(0, max(type.price[,-1], na.rm=T)), 
-         c(0,5), 
-         xlab="Sales Price", ylab="", 
-         bty="l", type="n")
-    text(rep(0, 4), 1:4+0.5, paste(c("coops", "condos", "luxury hotels", "comm. condos"), 
-                                   type.price$sale.n, sep=": "), adj=0, cex=1.5)
-    points(type.price$price.mean, 1:nrow(type.price), pch=16, col=2, cex=2)
-    points(type.price$price.median, 1:nrow(type.price),  pch=16, col=4, cex=2)
-    segments(type.price$price.mean, 1:nrow(type.price), 
-             type.price$price.median, 1:nrow(type.price),
-             lwd=2)    
-  })
-  
-  ## Panel 2: map of sales distribution
-  output$distPlot1 <- renderPlot({
-    count.df.sel=count.df
-    if(input$nbhd>0){
-      count.df.sel=count.df%>%
-        filter(region %in% zip.nbhd[[as.numeric(input$nbhd)]])
-    }
-    # make the map for selected neighhoods
-    
-    zip_choropleth(count.df.sel,
-                   title       = "2009 Manhattan housing sales",
-                   legend      = "Number of sales",
-                   county_zoom = 36061)
   })
 })

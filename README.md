@@ -14,7 +14,7 @@
 ## Project 2: Open Data App - an RShiny app development project
 Term: Spring 2017
 
-[ShinyApp link](https://ads-yz3032.shinyapps.io/nycrestaurantviolation/)
+[ShinyApp link](https://ads-yz3032.shinyapps.io/nyc_restaurant_violation/)
 
 + Team 5
 + **Clean Dining: Visualizing NYC Restaurant Violations**: 
